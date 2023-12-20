@@ -16,6 +16,7 @@ export interface MqttConfig {
   distinctFields: Array<string>;
   prefix: string;
   url: string;
+  interval: number;
 }
 
 export interface SunspecConfig {
@@ -65,6 +66,7 @@ export class ConfigLoader {
       .describe('mqtt-discovery', 'Emit auto-discovery message')
       .boolean('mqtt-discovery')
       .describe('mqtt-discovery-prefix', 'Autodiscovery prefix')
+      .describe('mqtt-interval', 'Seconds between MQTT posts')
       .describe('tcp-server', 'Expose JSON TCP socket on this port')
       .describe('raw-tcp-server', 'Expose RAW TCP socket on this port')
       .conflicts('port', 'socket')
@@ -82,6 +84,7 @@ export class ConfigLoader {
       })
       .default({
         'post-interval': 300,
+        'mqtt-interval': 30,
         'mqtt-topic': 'smartmeter',
         'mqtt-discovery-prefix': 'homeassistant',
         'sunspec-modbus-port': 502,
@@ -112,6 +115,7 @@ export class ConfigLoader {
         distinctFields: args['mqtt-distinct-fields'].split(','),
         prefix: args['mqtt-topic'] ?? 'smartmeter',
         url: args['mqtt-url'],
+        interval: args['mqtt-interval'],
       };
     }
 
