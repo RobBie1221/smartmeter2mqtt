@@ -1,19 +1,19 @@
 import mqtt, { MqttClient, IClientOptions } from 'mqtt';
 import { SunspecResult } from '@svrooij/sunspec/lib/sunspec-result';
-import Output from './output';
+import IntervalOutput from './interval-output';
 import P1ReaderEvents from '../p1-reader-events';
 import { MqttConfig } from '../config';
 import P1Reader from '../p1-reader';
 import DsmrMessage from '../dsmr-message';
 
 
-export default class MqttOutput extends Output {
+export default class MqttOutput extends IntervalOutput {
   private mqtt?: MqttClient;
 
   private discoverySend = false;
 
   constructor(private config: MqttConfig) {
-    super();
+    super(config.interval);
   }
 
   start(p1Reader: P1Reader): void {
