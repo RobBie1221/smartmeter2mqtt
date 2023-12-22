@@ -12,7 +12,7 @@ export default class MqttOutput extends Output {
 
   private discoverySend = false;
 
-  private time?: NodeJS.Timeout;
+  private timer?: NodeJS.Timeout;
 
   private publishNextEvent : boolean;
 
