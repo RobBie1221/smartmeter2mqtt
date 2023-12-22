@@ -1,19 +1,28 @@
 import mqtt, { MqttClient, IClientOptions } from 'mqtt';
 import { SunspecResult } from '@svrooij/sunspec/lib/sunspec-result';
-import IntervalOutput from './interval-output';
+import Output from './output';
 import P1ReaderEvents from '../p1-reader-events';
 import { MqttConfig } from '../config';
 import P1Reader from '../p1-reader';
 import DsmrMessage from '../dsmr-message';
 
 
-export default class MqttOutput extends IntervalOutput {
+export default class MqttOutput extends Output {
   private mqtt?: MqttClient;
 
   private discoverySend = false;
 
+  private time?: NodeJS.Timeout;
+
+  private publishNextEvent : boolean;
+
+  private interval?: number;
+
   constructor(private config: MqttConfig) {
-    super(config.interval);
+    super();
+
+    this.publishNextEvent = true;
+    this.interval = config.interval ?? 60;
   }
 
   start(p1Reader: P1Reader): void {
@@ -23,27 +32,25 @@ export default class MqttOutput extends IntervalOutput {
     });
 
     p1Reader.on(P1ReaderEvents.ParsedResult, (data) => {
-      this.publishData(data);
-      if (this.config.discovery && !this.discoverySend) {
-        this.publishAutoDiscovery(data);
-        this.discoverySend = true;
+      if (this.publishNextEvent) {
+        this.publishData(data);
+        if (this.config.discovery && !this.discoverySend) {
+          this.publishAutoDiscovery(data);
+          this.discoverySend = true;
+        }
+        this.publishNextEvent = false;
       }
     });
 
-    p1Reader.on(P1ReaderEvents.UsageChanged, (data) => {
-      this.publishUsage(data);
-    });
-
-    p1Reader.on(P1ReaderEvents.GasUsageChanged, (data) => {
-      this.publishGasUsage(data);
-    });
-
-    p1Reader.on(P1ReaderEvents.SolarResult, (data) => {
-      this.publishSolar(data);
-    });
+    this.timer = setInterval(() => {
+      this.publishNextEvent = true;
+    }, (this.interval ?? 60) * 1000);
   }
 
   async close(): Promise<void> {
+    if (this.timer) {
+      clearInterval(this.timer);
+    }
     return new Promise((resolve) => {
       this.mqtt?.end(false, {}, resolve);
     });
